@@ -28,19 +28,25 @@ var PUBNUB = require('pubnub')({
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 function grant( channel, auth_key, retry ) {
 
+    // ------------------------
     // Continue when Successful
+    // ------------------------
     function proceed() {
         if (!QUEUE.length) return;
         grant.apply( {}, QUEUE.shift() );
     }
 
+    // ------------------------
     // Retry on Failure
+    // ------------------------
     function retry() {
         if (retry && retry > 4) return console.log("gave up");
         grant.apply( this, [ channel, auth_key, retry && ++retry || 1 ] );
     }
 
-    // Produce Grant
+    // ------------------------
+    // Produce a Grant
+    // ------------------------
     PUBNUB.grant({
         channel   : channel,
         auth_key  : auth_key,
@@ -69,12 +75,10 @@ function grant( channel, auth_key, retry ) {
 // Queue of Grants
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 var QUEUE = [];
-for (var i=0; i<config.n; i++) QUEUE.push([uuid.v4(),uuid.v4(),uuid.v4()]);
+for (var i=0;i<config.n;i++) QUEUE.push([uuid.v4(),uuid.v4(),uuid.v4()]);
 
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 // Start Granting
 // =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-for (var i=0; i<config.concurrent; i++) {
-    QUEUE.length && grant.apply( {}, QUEUE.shift() );
-}
+for (var i=0;i<config.c;i++) QUEUE.length && grant.apply({},QUEUE.shift());
 

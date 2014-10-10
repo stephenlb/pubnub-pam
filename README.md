@@ -1,23 +1,26 @@
-pubnub-crash-test
-=================
+# PubNub Access Manager Concurrency
 
-issue 10 requests:
+![PubNub Access Manager High Concurrency Grants](http://pubnub.s3.amazonaws.com/assets/pam.gif)
 
-    node index.js -n 10
+Issue 100 requests with concurrency of 10:
 
-with debug messages:
+    node index.js -n 100 -c 10
 
-    DEBUG=* node index.js
+Do something *very bad* **"too much concurrency"**:
 
+    node index.js -n 10000 -c 2000
 
-## Cmd line options
+Test many grants with reasonable concurrency:
 
-* -subscribe_key ''
-* -publish_key ''
-* -secret_key ''
-* -ssl true
-* -ttl 0
-* -use_cipher_key true
-* -n 100
+    node index.js -n 10000 -c 20
 
-These can be also set in a .pubnubrc json file.
+## Command Line Options
+
+ - `-subscribe_key 'pam'` - Subscribe Key
+ - `-publish_key   'pam'` - Publish Key
+ - `-secret_key    'pam'` - Secret Key
+ - `-ssl true`            - SSL Mode
+ - `-ttl 10`              - TTL in Minutes of Session Life
+ - `-n 100`               - Number of Grants to Issue
+ - `-c 10`                - Number of Conccurent
+
