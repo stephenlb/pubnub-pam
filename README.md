@@ -1,6 +1,12 @@
 # PubNub Access Manager
 
-> Grant Access with PubNub and a Variable Concurrency
+> Grant Access with PubNub and a variable Concurrency
+> Warning do not set concurrency too high.
+> Setting concurrency too high will caus your server/client
+> to overloaded and begin throwing errors.
+
+This screen capture demos a reasonable concurrency
+`node index.js -n 200 -c 20`.
 
 ![PubNub Access Manager High Concurrency Grants](http://pubnub.s3.amazonaws.com/assets/pam.gif)
 
@@ -24,5 +30,5 @@ Test many grants with reasonable concurrency:
  - `-ssl true`            - SSL Mode
  - `-ttl 10`              - TTL in Minutes of Session Life
  - `-n 100`               - Number of Grants to Issue
- - `-c 10`                - Number of Conccurent
+ - `-c 10`                - Number of Concurrent Requests
 
