@@ -1,5 +1,7 @@
 # PubNub Access Manager
 
+Example Usage of PAM with Concurrency and Node.js
+
 > Grant Access with PubNub and a variable Concurrency
 > Warning do not set concurrency too high.
 > Setting concurrency too high will cause your server
