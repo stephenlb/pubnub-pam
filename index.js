@@ -1,62 +1,80 @@
-var log = require('debug')('pubnub:log');
-var error = require('debug')('pubnub:err');
-var PUBNUB = require('pubnub');
-var uuid = require('uuid');
-var when = require('when');
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Config and UUID
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+var uuid   = require('uuid');
 var config = require('./config');
 
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Counters
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 var Counters = {
-	success: 0,
-	err: 0,
-	unknown_err: 0
+    success       : 0,
+    err           : 0,
+    unknown_err   : 0
 };
 
-var grant = function(channel, auth_key, cipher_key) {
-	return when.promise(function(resolve, reject) {
-		var args = {
-			secret_key: config.secret_key,
-			publish_key: config.publish_key,
-			subscribe_key: config.subscribe_key,
-			auth_key: auth_key, /* this shouldn't matter, we are using a secret_key */
-			ssl: config.ssl
-		};
-		if (config.use_cipher_key)
-			args.cipher_key = cipher_key;
-		PUBNUB(args).grant({
-			channel: channel,
-			auth_key: auth_key,
-			ttl: config.ttl,
-			read: true,
-			write: true,
-			callback: function(data) {
-				log('success:', data);
-				Counters.success++;
-				resolve(data);
-			},
-			error: function(err) {
-				error('err:', err);
-				if (err) {
-					Counters.err++;
-					reject(new Error(err.message));
-				} else {
-					Counters.unknown_err++;
-					reject(new Error('empty error'));
-				}
-			}
-		});
-	});
-};
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// PubNub
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+var PUBNUB = require('pubnub')({
+    secret_key    : config.secret_key,
+    publish_key   : config.publish_key,
+    subscribe_key : config.subscribe_key,
+    ssl           : config.ssl
+});
 
-var arr = [];
-for (var i = 0; i < config.n; i++) {
-	arr.push(grant(uuid.v4(), uuid.v4(), uuid.v4()));
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Grant Access to a PubNub Channel
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+function grant( channel, auth_key, retry ) {
+
+    // Continue when Successful
+    function proceed() {
+        if (!QUEUE.length) return;
+        grant.apply( {}, QUEUE.shift() );
+    }
+
+    // Retry on Failure
+    function retry() {
+        if (retry && retry > 4) return console.log("gave up");
+        grant.apply( this, [ channel, auth_key, retry && ++retry || 1 ] );
+    }
+
+    // Produce Grant
+    PUBNUB.grant({
+        channel   : channel,
+        auth_key  : auth_key,
+        ttl       : config.ttl,
+        read      : true,
+        write     : true,
+        callback  : function(data) {
+            Counters.success++;
+            console.log(Counters);
+            proceed();
+        },
+        error     : function(err) {
+            if (err) Counters.err++;
+            else     Counters.unknown_err++;
+
+            console.log(Counters);
+            console.log('err:', err);
+
+            retry();
+        }
+    });
+
 }
 
-when.all(arr)
-	.done(function(data) {
-		console.log(Counters);
-		process.exit(0);
-	}, function(err) {
-		console.log(Counters);
-		process.exit(1);
-	});
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Queue of Grants
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+var QUEUE = [];
+for (var i=0; i<config.n; i++) QUEUE.push([uuid.v4(),uuid.v4(),uuid.v4()]);
+
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Start Granting
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+for (var i=0; i<config.concurrent; i++) {
+    QUEUE.length && grant.apply( {}, QUEUE.shift() );
+}
+

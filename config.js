@@ -1,9 +1,13 @@
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+// Configuration
+// =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 module.exports = require('rc')('pubnub', {
-	subscribe_key: '',
-	publish_key: '',
-	secret_key: '',
-	ssl: true,
-	ttl: 0,
-	use_cipher_key: true,
-	n: 100
+	subscribe_key  : 'pam',
+	publish_key    : 'pam',
+	secret_key     : 'pam',
+	ssl            : true,
+	ttl            : 10,
+	use_cipher_key : true,
+	n              : 1000,
+        concurrent     : 10
 });
