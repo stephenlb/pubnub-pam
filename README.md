@@ -1,4 +1,6 @@
-# PubNub Access Manager Concurrency
+# PubNub Access Manager
+
+> Grant Access with PubNub and a Variable Concurrency
 
 ![PubNub Access Manager High Concurrency Grants](http://pubnub.s3.amazonaws.com/assets/pam.gif)
 
